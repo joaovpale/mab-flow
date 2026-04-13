@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Servidor Zebras</title>
+  <link rel="icon" type="image/x-icon" href="zebra-logo.jpg">
+  <style>
+    :root {
+        --backgroundC: rgb(216, 216, 216);
+    }
+
+    body {
+        margin: 10px 250px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    header {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    a {
+        text-decoration: none;
+        color: black;
+    }
+
+    .h2Border {
+        background-color: var(--backgroundC);
+        border-radius: 25px;
+        width: 270px;
+        height: 62px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .divForm {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
+    form {
+        display: flex;
+        align-items: center;
+        gap: 50px;
+    }
+    .inputFile::file-selector-button {
+        height: 62px;
+        width: 250px;
+        border-radius: 20px;
+        border: 0px;
+        background-color: var(--backgroundC);
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    #status {
+        margin-left: 10px;
+        font-weight: 700;
+    }
+
+    #divFila {
+        background-color: var(--backgroundC);
+        border-radius: 25px;
+        padding: 10px 20px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    #divFila h2 {
+        margin: 0px 0px 0px 6px;
+    }
+
+    .cleanList {
+        border-radius: 13px;
+        border: 0;
+        padding: 5px 10px;
+        margin-right: -5px;
+    }
+    .cleanList:hover {
+        scale: 1.2;
+        transition: 0.3s;
+        font-size: 12px;
+        background-color: rgb(190, 65, 65);
+        color: white;
+        margin-right: 0px;
+    }
+
+    #list div div {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+        gap: 5px;
+    }
+
+    .buttonPrint {
+        border-radius: 5px;
+        border: 0px;
+        background-color: var(--backgroundC);
+        transition: 0.2s;
+    }
+    .buttonPrint:hover {
+        scale: 1.1;
+        transition: 0.2s;
+        font-weight: 500;
+        color: rgb(255, 255, 255);
+        background-color: rgb(105, 129, 98);
+    }
+
+    hr {
+        margin: 10 0;
+    }
+  </style>
+</head>
+<body>
+    <header>
+        <a href="zfpp-full-labels.html">
+            <div class="h2Border">
+                <h2 class="h2Title">Enviar ZIP - Vendas</h2>
+            </div>
+        </a>
+        <div class="divForm">
+            <form id="uploadForm">
+            <input class="inputFile" type="file" name="file" required />
+            </form>
+            <p id="status"></p>
+        </div>
+    </header>
+
+    <hr>
+
+    <div id="divFila">
+        <h2>Fila de Impressão</h2>
+        <button class="cleanList" style="transition: 0.3s;" onclick="limparPasta()">Limpar</button>
+    </div>
+
+    <div id="list"></div>
+
+    <script>
+    async function loadQueue() {
+    const res = await fetch("/queue");
+    const data = await res.json();
+
+    const div = document.getElementById("list");
+    div.innerHTML = "";
+
+    if (data.length === 0) {
+        div.innerHTML = "<p>Fila vazia</p>";
+        return;
+    }
+
+    data.forEach(item => {
+        const el = document.createElement("div");
+
+        el.innerHTML = `
+        <div>
+            <button class="buttonPrint" onclick="printItem('${item.id}')">Imprimir</button>
+            <b class="bPrint">${item.name}</b>
+        </div>
+        <hr>
+        `;
+
+        div.appendChild(el);
+    });
+    }
+
+    async function printItem(id) {
+    const res = await fetch("/print/" + id, { method: "POST" });
+
+    if (res.ok) {
+        loadQueue();
+    } else {
+        alert("Erro ao imprimir");
+    }
+    }
+
+    async function limparPasta() {
+        const res = await fetch("/clear", { method: "POST" });
+
+        if (res.ok) {
+            loadQueue();
+        } else {
+            alert("Erro ao limpar");
+        }
+    }
+
+    document.querySelector(".inputFile").addEventListener("change", async (e) => {
+    const input = e.target;
+
+    if (!input.files.length) return;
+
+    const formData = new FormData();
+    formData.append("file", input.files[0]);
+
+    document.getElementById("status").innerText = "Enviando...";
+
+    const res = await fetch("/upload", {
+        method: "POST",
+        body: formData
+    });
+
+    if (res.ok) {
+        document.getElementById("status").innerText = "Enviado com sucesso";
+        input.value = ""; // limpa input
+        loadQueue();
+    } else {
+        document.getElementById("status").innerText = "Erro no envio";
+    }
+    });
+
+    // auto reload da fila a cada 5s
+    setInterval(loadQueue, 5000);
+
+    loadQueue();
+    </script>
+
+</body>
+</html>
