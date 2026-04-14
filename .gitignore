@@ -139,7 +139,9 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # arquivos de impressão
-zpp/extracted
-zpp/extractedFull
-zpp/uploads
-zpp/uploadsFull
+modules/zpp/extracted
+modules/zpp/extractedFull
+modules/zpp/uploads
+modules/zpp/uploadsFull
+modules/zpp/queue.json
+modules/zpp/queueFull.json
