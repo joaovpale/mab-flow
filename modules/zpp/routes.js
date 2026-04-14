@@ -1,17 +1,18 @@
 const express = require("express");
+const path = require("path");
+const router = express.Router();
 const multer = require("multer");
 const AdmZip = require("adm-zip");
 const fs = require("fs");
-const path = require("path");
-const app = express();
-app.use(express.static("zpp/public"));
-app.use(express.json());
-
-const upload = multer({ dest: "zpp/uploads/" });
-const uploadFull = multer({ dest: "zpp/uploadsFull/" });
-
-const QUEUE_FILE = "zpp/queue.json";
-const QUEUE_FILEFULL = "zpp/queueFull.json";
+const BASE_PATH = path.join(__dirname);
+const QUEUE_FILE = path.join(BASE_PATH, "queue.json");
+const QUEUE_FILEFULL = path.join(BASE_PATH, "queueFull.json");
+const EXTRACTED_PATH = path.join(BASE_PATH, "extracted");
+const EXTRACTED_FULL_PATH = path.join(BASE_PATH, "extractedFull");
+const upload = multer({ dest: path.join(BASE_PATH, "uploads") });
+const uploadFull = multer({ dest: path.join(BASE_PATH, "uploadsFull") });
+fs.mkdirSync(EXTRACTED_PATH, { recursive: true });
+fs.mkdirSync(EXTRACTED_FULL_PATH, { recursive: true });
 
 // carregar fila
 function loadQueue() {
@@ -89,7 +90,7 @@ function gerarId() {
 }
 
 
-app.post("/upload", upload.single("file"), (req, res) => {
+router.post("/upload", upload.single("file"), (req, res) => {
   try {
     const filePath = req.file.path;
     const fileName = req.file.originalname;
@@ -98,7 +99,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
 
     if (fileName.endsWith(".txt")) {
       const id = gerarId();
-      const newPath = path.join("zpp/extracted", `${id}.txt`);
+      const newPath = path.join(EXTRACTED_PATH, `${id}.txt`);
 
       fs.renameSync(filePath, newPath);
 
@@ -114,7 +115,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
 
     if (fileName.endsWith(".zpl")) {
       const id = gerarId();
-      const newPath = path.join("zpp/extracted", `${id}.zpl`);
+      const newPath = path.join(EXTRACTED_PATH, `${id}.zpl`);
 
       fs.renameSync(filePath, newPath);
 
@@ -125,33 +126,46 @@ app.post("/upload", upload.single("file"), (req, res) => {
       });
 
       saveQueue(queue);
-      return res.send("TXT adicionado à fila");
+      return res.send("ZPL adicionado à fila");
     }
 
     if (fileName.endsWith(".zip")) {
       const zip = new AdmZip(filePath);
-      const extractPath = "zpp/extracted/";
 
-      zip.extractAllTo(extractPath, true);
+      zip.extractAllTo(EXTRACTED_PATH, true);
 
-      const files = fs.readdirSync(extractPath);
+      const files = fs.readdirSync(EXTRACTED_PATH);
       const txtFiles = files.filter(f => f.endsWith(".txt"));
+      const zplFiles = files.filter(f => f.endsWith(".zpl"));
 
-      if (txtFiles.length === 0) {
+      if (txtFiles.length === 0 && zplFiles.length === 0) {
         return res.status(400).send("Nenhum TXT encontrado");
       }
 
       txtFiles.forEach(file => {
         const id = gerarId();
-
-        const oldPath = path.join(extractPath, file);
-        const newPath = path.join(extractPath, `${id}.txt`);
+        const oldPath = path.join(EXTRACTED_PATH, file);
+        const newPath = path.join(EXTRACTED_PATH, `${id}.txt`);
 
         fs.renameSync(oldPath, newPath);
 
         queue.push({
           id: id,
           name: `${id}.txt`,
+          status: "pending"
+        });
+      }) 
+
+      zplFiles.forEach(file => {
+        const id = gerarId();
+        const oldPath = path.join(EXTRACTED_PATH, file);
+        const newPath = path.join(EXTRACTED_PATH, `${id}.zpl`);
+
+        fs.renameSync(oldPath, newPath);
+
+        queue.push({
+          id: id,
+          name: `${id}.zpl`,
           status: "pending"
         });
       });
@@ -169,7 +183,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
   }
 });
 
-app.post("/uploadFull", uploadFull.single("file"), (req, res) => {
+router.post("/uploadFull", uploadFull.single("file"), (req, res) => {
   try {
     const filePath = req.file.path;
     const fileName = req.file.originalname;
@@ -178,7 +192,7 @@ app.post("/uploadFull", uploadFull.single("file"), (req, res) => {
 
     if (fileName.endsWith(".txt")) {
       const id = gerarId();
-      const newPath = path.join("zpp/extractedFull", `${id}.txt`);
+      const newPath = path.join(EXTRACTED_FULL_PATH, `${id}.txt`);
 
       fs.renameSync(filePath, newPath);
 
@@ -194,7 +208,7 @@ app.post("/uploadFull", uploadFull.single("file"), (req, res) => {
 
     if (fileName.endsWith(".zpl")) {
       const id = gerarId();
-      const newPath = path.join("zpp/extractedFull", `${id}.zpl`);
+      const newPath = path.join(EXTRACTED_FULL_PATH, `${id}.zpl`);
 
       fs.renameSync(filePath, newPath);
 
@@ -210,11 +224,10 @@ app.post("/uploadFull", uploadFull.single("file"), (req, res) => {
 
     if (fileName.endsWith(".zip")) {
       const zip = new AdmZip(filePath);
-      const extractPath = "zpp/extractedFull/";
 
-      zip.extractAllTo(extractPath, true);
+      zip.extractAllTo(EXTRACTED_FULL_PATH, true);
 
-      const files = fs.readdirSync(extractPath);
+      const files = fs.readdirSync(EXTRACTED_FULL_PATH);
       const txtFiles = files.filter(f => f.endsWith(".txt"));
 
       if (txtFiles.length === 0) {
@@ -224,8 +237,8 @@ app.post("/uploadFull", uploadFull.single("file"), (req, res) => {
       txtFiles.forEach(file => {
         const id = gerarId();
 
-        const oldPath = path.join(extractPath, file);
-        const newPath = path.join(extractPath, `${id}.txt`);
+        const oldPath = path.join(EXTRACTED_FULL_PATH, file);
+        const newPath = path.join(EXTRACTED_FULL_PATH, `${id}.txt`);
 
         fs.renameSync(oldPath, newPath);
 
@@ -250,19 +263,17 @@ app.post("/uploadFull", uploadFull.single("file"), (req, res) => {
 });
 
 
-app.get("/queue", (req, res) => {
+router.get("/queue", (req, res) => {
   const queue = loadQueue();
   res.json(queue.filter(item => item.status === "pending"));
 });
 
-app.get("/queueFull", (req, res) => {
+router.get("/queueFull", (req, res) => {
   const queue = loadQueueFull();
   res.json(queue.filter(item => item.status === "pending"));
 });
 
-
-// 🖨️ imprimir item
-app.post("/print/:id", (req, res) => {
+router.post("/print/:id", (req, res) => {
   let queue = loadQueue();
 
   const item = queue.find(i => i.id === req.params.id);
@@ -272,7 +283,7 @@ app.post("/print/:id", (req, res) => {
   console.log("ID recebido:", req.params.id);
   console.log("Fila:", queue);
 
-  sendToPrinter(`zpp/extracted/${item.name}`)
+  sendToPrinter(path.join(EXTRACTED_PATH, item.name))
     .then(() => {
       item.status = "printed";
       saveQueue(queue);
@@ -285,7 +296,6 @@ app.post("/print/:id", (req, res) => {
 });
 
 function fullParametros(filePath) {
-  const fs = require("fs");
   let content = fs.readFileSync(filePath, "utf8");
   const linhas = content.split("\n");
 
@@ -307,14 +317,14 @@ function fullParametros(filePath) {
   }
 }
 
-app.post("/printFull/:id", (req, res) => {
+router.post("/printFull/:id", (req, res) => {
   let queue = loadQueueFull();
 
   const item = queue.find(i => i.id === req.params.id);
 
   if (!item) return res.status(404).send("Não encontrado");
 
-  const filePath = `zpp/extractedFull/${item.name}`;
+  const filePath = path.join(EXTRACTED_FULL_PATH, item.name);
 
   try {
     fullParametros(filePath);
@@ -326,7 +336,7 @@ app.post("/printFull/:id", (req, res) => {
   console.log("ID recebido:", req.params.id);
   console.log("Fila:", queue);
 
-  sendToPrinterFull(`zpp/extractedFull/${item.name}`)
+  sendToPrinterFull(path.join(EXTRACTED_FULL_PATH, item.name))
     .then(() => {
       item.status = "printed";
       saveQueueFull(queue);
@@ -338,20 +348,16 @@ app.post("/printFull/:id", (req, res) => {
     });
 });
 
-app.post("/clear", (req, res) => {
-  const fs = require("fs");
-  const path = require("path");
-
-  const base = "/home/admin/mab-flow/zfpp";
+router.post("/clear", (req, res) => {
 
   try {
-      fs.rmSync(path.join(base, "extracted"), { recursive: true, force: true });
-      fs.mkdirSync(path.join(base, "extracted"), { recursive: true });
+      fs.rmSync(path.join(BASE_PATH, "extracted"), { recursive: true, force: true });
+      fs.mkdirSync(path.join(BASE_PATH, "extracted"), { recursive: true });
 
-      fs.rmSync(path.join(base, "uploads"), { recursive: true, force: true });
-      fs.mkdirSync(path.join(base, "uploads"), { recursive: true });
+      fs.rmSync(path.join(BASE_PATH, "uploads"), { recursive: true, force: true });
+      fs.mkdirSync(path.join(BASE_PATH, "uploads"), { recursive: true });
 
-      fs.writeFileSync(path.join(base, "queue.json"), "[]");
+      fs.writeFileSync(path.join(BASE_PATH, "queue.json"), "[]");
 
       res.send("Limpo com sucesso");
   } catch (err) {
@@ -360,20 +366,16 @@ app.post("/clear", (req, res) => {
   }
 });
 
-app.post("/clearFull", (req, res) => {
-  const fs = require("fs");
-  const path = require("path");
-
-  const base = "/home/admin/mab-flow/zfpp";
+router.post("/clearFull", (req, res) => {
 
   try {
-      fs.rmSync(path.join(base, "extractedFull"), { recursive: true, force: true });
-      fs.mkdirSync(path.join(base, "extractedFull"), { recursive: true });
+      fs.rmSync(path.join(BASE_PATH, "extractedFull"), { recursive: true, force: true });
+      fs.mkdirSync(path.join(BASE_PATH, "extractedFull"), { recursive: true });
 
-      fs.rmSync(path.join(base, "uploadsFull"), { recursive: true, force: true });
-      fs.mkdirSync(path.join(base, "uploadsFull"), { recursive: true });
+      fs.rmSync(path.join(BASE_PATH, "uploadsFull"), { recursive: true, force: true });
+      fs.mkdirSync(path.join(BASE_PATH, "uploadsFull"), { recursive: true });
 
-      fs.writeFileSync(path.join(base, "queueFull.json"), "[]");
+      fs.writeFileSync(path.join(BASE_PATH, "queueFull.json"), "[]");
 
       res.send("Limpo com sucesso");
   } catch (err) {
@@ -382,4 +384,14 @@ app.post("/clearFull", (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Rodando!"));
+// sales
+router.get("/sales-labels", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/zpp-shopee-sales.html"));
+});
+
+// full labels
+router.get("/full-labels", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/zpp-full-labels.html"));
+});
+
+module.exports = router;

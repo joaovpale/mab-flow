@@ -116,7 +116,7 @@
 </head>
 <body>
     <header>
-        <a href="zfpp-full-labels.html">
+        <a href="/zpp/full-labels">
             <div class="h2Border">
                 <h2 class="h2Title">Enviar ZIP - Vendas</h2>
             </div>
@@ -140,7 +140,7 @@
 
     <script>
     async function loadQueue() {
-    const res = await fetch("/queue");
+    const res = await fetch("/zpp/queue");
     const data = await res.json();
 
     const div = document.getElementById("list");
@@ -167,7 +167,7 @@
     }
 
     async function printItem(id) {
-    const res = await fetch("/print/" + id, { method: "POST" });
+    const res = await fetch("/zpp/print/" + id, { method: "POST" });
 
     if (res.ok) {
         loadQueue();
@@ -177,7 +177,7 @@
     }
 
     async function limparPasta() {
-        const res = await fetch("/clear", { method: "POST" });
+        const res = await fetch("/zpp/clear", { method: "POST" });
 
         if (res.ok) {
             loadQueue();
@@ -196,7 +196,7 @@
 
     document.getElementById("status").innerText = "Enviando...";
 
-    const res = await fetch("/upload", {
+    const res = await fetch("/zpp/upload", {
         method: "POST",
         body: formData
     });
