@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codes</title>
+
+    <style>
+        :root {
+            --backgroundC: rgb(216, 216, 216);
+            --backgroundCbutton: rgb(150, 150, 150);
+        }
+        * {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--backgroundC);
+            border-radius: 20px;
+            margin: 15px;
+            padding: 0px 20px;
+        }
+        header a {
+            transition: 0.2s;
+        }
+        button {
+            border-radius: 40px;
+            border: 0;
+            width: 60px;
+            height: 50px;
+            background-color: var(--backgroundC);
+        }
+        header a:hover {
+            scale: 1.2;
+            transition: 0.2s;
+        }
+        .rotate {
+            animation: spin 0.4s linear infinite;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a id="aHome" href="/"><img src="/icons/home.svg" alt=""></a>
+        <h2>Gerenciador de Códigos</h2>
+        <button onclick="load(false)"><img id="refreshImage" src="/icons/refresh.svg" alt=""></button>
+    </header>
+    <section>
+        <table border="1">
+            <thead>
+                <tr>
+                <th>SKU</th>
+                <th>Códigos</th>
+                <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="table"></tbody>
+        </table>
+
+        <div id="modal" style="display:none; position:fixed; top:20%; left:30%; background:white; padding:20px; border:1px solid black;">
+            <h3>Editar</h3>
+            <div id="codes"></div>
+            <input id="newCode" placeholder="Novo código"/>
+            <button onclick="addCode()">Adicionar</button>
+            <button onclick="saveEdit()">Salvar</button>
+        </div>
+
+        <script>
+            let data = [];
+            let currentIndex = null;
+            const refreshImage = document.getElementById("refreshImage")
+
+            // Carregar CSV
+            async function load(starting) {
+                const res = await fetch("/outFull/data");
+                const text = await res.text();
+
+            if(!starting) {
+                refreshImage.classList.add("rotate")
+            }
+
+            data = text
+            .split("\n")
+            .filter(line => line.trim() !== "") // remove linhas vazias
+            .map(line => {
+                const match = line.match(/"(.*)",(.*)/);
+
+                if (!match) {
+                console.warn("Linha inválida:", line);
+                return null;
+                }
+
+                return {
+                codes: match[1].split(", "),
+                sku: match[2]
+                };
+            })
+            .filter(Boolean); // remove null
+
+                render();
+            }
+
+            function render() {
+                const table = document.getElementById("table");
+                table.innerHTML = "";
+
+                data.forEach((row, i) => {
+                    table.innerHTML += `
+                    <tr>
+                        <td>${row.sku}</td>
+                        <td>${row.codes.join(", ")}</td>
+                        <td><button onclick="edit(${i})">Editar</button></td>
+                    </tr>
+                    `;
+                });
+                setTimeout(() => {
+                    refreshImage.classList.remove("rotate");
+                }, 800)
+                
+            }
+
+            function edit(i) {
+                currentIndex = i;
+                const modal = document.getElementById("modal");
+                const codesDiv = document.getElementById("codes");
+
+                codesDiv.innerHTML = "";
+
+                data[i].codes.forEach((c, idx) => {
+                    codesDiv.innerHTML += `
+                    <div>
+                        ${c}
+                        <button onclick="removeCode(${idx})">X</button>
+                    </div>
+                    `;
+                });
+
+                modal.style.display = "block";
+            }
+
+            function removeCode(idx) {
+                data[currentIndex].codes.splice(idx, 1);
+                edit(currentIndex);
+            }
+
+            function addCode() {
+                const input = document.getElementById("newCode");
+                if (input.value) {
+                    data[currentIndex].codes.push(input.value);
+                    input.value = "";
+                    edit(currentIndex);
+                }
+                }
+
+                async function saveEdit() {
+                // reconstruir CSV
+                const csv = data.map(row =>
+                    `"${row.codes.join(", ")}",${row.sku}`
+                ).join("\n");
+
+                await fetch("/outFull/save", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ csv })
+                });
+
+                document.getElementById("modal").style.display = "none";
+                render();
+            };
+
+            load(true);
+        </script>
+    </section>
+</body>
+</html>

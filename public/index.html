@@ -4,15 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>INDEX page</title>
+    <style>
+        :root {
+            --backgroundC: rgb(216, 216, 216);
+            --backgroundC2: rgb(248, 248, 248);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        header {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--backgroundC);
+            margin: 10px;
+            padding: 5px 15px;
+            border-radius: 25px;
+        }
+        a {
+            color: var(--backgroundC);
+        }
+        button {
+            width: 100px;
+            height: 30px;
+            border-radius: 15px;
+            border: 0;
+            background-color: var(--backgroundC2);
+            font-weight: 600;
+            margin-right: 10px;
+            transition: 0.3s;
+        }
+        a:hover button {
+            scale: 1.2;
+            transition: 0.3s;
+        }
+    </style>
 </head>
 <body>
-    <h1>INDEX PAGE</h1>
-
-    <a href="/zpp/sales-labels">
-        <button>SHOPEE PAGE</button>
-    </a>
-    <a href="/zpp/full-labels">
-        <button>FULL PAGE</button>
-    </a>
+    <header>
+        <div>
+            <a href="/zpp/sales-labels">
+                <button>SHOPEE PAGE</button>
+            </a>
+            <a href="/zpp/full-labels">
+                <button>FULL PAGE</button>
+            </a>
+        </div>
+        <h1>INDEX PAGE</h1>
+        <a href="/outFull/home">
+            <button>SKUs</button>
+        </a>
+    </header>
 </body>
 </html>
