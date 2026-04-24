@@ -171,6 +171,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
       });
 
       saveQueue(queue);
+      loadQueue()
       return res.send("ZIP processado e adicionado à fila");
     }
 

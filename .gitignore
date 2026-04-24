@@ -145,3 +145,4 @@ modules/zpp/uploads
 modules/zpp/uploadsFull
 modules/zpp/queue.json
 modules/zpp/queueFull.json
+modules/outFull/codesFull.csv

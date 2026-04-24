@@ -138,40 +138,40 @@
 
     <script>
     async function loadQueue() {
-    const res = await fetch("/zpp/queue");
-    const data = await res.json();
+        const res = await fetch("/zpp/queue");
+        const data = await res.json();
 
-    const div = document.getElementById("list");
-    div.innerHTML = "";
+        const div = document.getElementById("list");
+        div.innerHTML = "";
 
-    if (data.length === 0) {
-        div.innerHTML = "<p>Fila vazia</p>";
-        return;
-    }
+        if (data.length === 0) {
+            div.innerHTML = "<p>Fila vazia</p>";
+            return;
+        }
 
-    data.forEach(item => {
-        const el = document.createElement("div");
+        data.forEach(item => {
+            const el = document.createElement("div");
 
-        el.innerHTML = `
-        <div>
-            <button class="buttonPrint" onclick="printItem('${item.id}')">Imprimir</button>
-            <b class="bPrint">${item.name}</b>
-        </div>
-        <hr>
-        `;
+            el.innerHTML = `
+            <div>
+                <button class="buttonPrint" onclick="printItem('${item.id}')">Imprimir</button>
+                <b class="bPrint">${item.name}</b>
+            </div>
+            <hr>
+            `;
 
-        div.appendChild(el);
-    });
+            div.appendChild(el);
+        });
     }
 
     async function printItem(id) {
-    const res = await fetch("/zpp/print/" + id, { method: "POST" });
+        const res = await fetch("/zpp/print/" + id, { method: "POST" });
 
-    if (res.ok) {
-        loadQueue();
-    } else {
-        alert("Erro ao imprimir");
-    }
+        if (res.ok) {
+            loadQueue();
+        } else {
+            alert("Erro ao imprimir");
+        }
     }
 
     async function limparPasta() {
@@ -185,27 +185,27 @@
     }
 
     document.querySelector(".inputFile").addEventListener("change", async (e) => {
-    const input = e.target;
+        const input = e.target;
 
-    if (!input.files.length) return;
+        if (!input.files.length) return;
 
-    const formData = new FormData();
-    formData.append("file", input.files[0]);
+        const formData = new FormData();
+        formData.append("file", input.files[0]);
 
-    document.getElementById("status").innerText = "Enviando...";
+        document.getElementById("status").innerText = "Enviando...";
 
-    const res = await fetch("/zpp/upload", {
-        method: "POST",
-        body: formData
-    });
+        const res = await fetch("/zpp/upload", {
+            method: "POST",
+            body: formData
+        });
 
-    if (res.ok) {
-        document.getElementById("status").innerText = "Enviado com sucesso";
-        input.value = ""; // limpa input
-        loadQueue();
-    } else {
-        document.getElementById("status").innerText = "Erro no envio";
-    }
+        if (res.ok) {
+            document.getElementById("status").innerText = "Enviado com sucesso";
+            input.value = ""; // limpa input
+            loadQueue();
+        } else {
+            document.getElementById("status").innerText = "Erro no envio";
+        }
     });
 
     // auto reload da fila a cada 5s

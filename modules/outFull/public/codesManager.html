@@ -30,12 +30,17 @@
         header a {
             transition: 0.2s;
         }
+        section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         button {
             border-radius: 40px;
             border: 0;
-            width: 60px;
-            height: 50px;
-            background-color: var(--backgroundC);
+            background-color: rgba(128, 128, 128, 0);
+            cursor: pointer;
+
         }
         header a:hover {
             scale: 1.2;
@@ -72,10 +77,10 @@
             <tbody id="table"></tbody>
         </table>
 
-        <div id="modal" style="display:none; position:fixed; top:20%; left:30%; background:white; padding:20px; border:1px solid black;">
+        <div id="modal" style="display:none; position:fixed; top:18%; background:white; padding:20px; border: 0; border-radius: 15px; box-shadow: 0px 0px 20px rgb(0, 0, 0);">
             <h3>Editar</h3>
             <div id="codes"></div>
-            <input id="newCode" placeholder="Novo código"/>
+            <input id="newCode" placeholder="Novo código" style="margin-top: 20px; border-radius: 5px"/>
             <button onclick="addCode()">Adicionar</button>
             <button onclick="saveEdit()">Salvar</button>
         </div>
@@ -90,29 +95,29 @@
                 const res = await fetch("/outFull/data");
                 const text = await res.text();
 
-            if(!starting) {
-                refreshImage.classList.add("rotate")
-            }
-
-            data = text
-            .split("\n")
-            .filter(line => line.trim() !== "") // remove linhas vazias
-            .map(line => {
-                const match = line.match(/"(.*)",(.*)/);
-
-                if (!match) {
-                console.warn("Linha inválida:", line);
-                return null;
+                if(!starting) {
+                    refreshImage.classList.add("rotate")
                 }
 
-                return {
-                codes: match[1].split(", "),
-                sku: match[2]
-                };
-            })
-            .filter(Boolean); // remove null
+                data = text
+                .split("\n")
+                .filter(line => line.trim() !== "") // remove linhas vazias
+                .map(line => {
+                    const match = line.match(/"(.*)",(.*)/);
 
-                render();
+                    if (!match) {
+                    console.warn("Linha inválida:", line);
+                    return null;
+                    }
+
+                    return {
+                    codes: match[1].split(", "),
+                    sku: match[2]
+                    };
+                })
+                .filter(Boolean); // remove null
+
+                    render();
             }
 
             function render() {
@@ -144,8 +149,8 @@
                 data[i].codes.forEach((c, idx) => {
                     codesDiv.innerHTML += `
                     <div>
+                        <button title="Remover código" onclick="removeCode(${idx})" style="color: red; font-weight: 700">X</button>
                         ${c}
-                        <button onclick="removeCode(${idx})">X</button>
                     </div>
                     `;
                 });
